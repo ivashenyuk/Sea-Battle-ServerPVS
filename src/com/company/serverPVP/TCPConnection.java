@@ -2,6 +2,7 @@ package com.company.serverPVP;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.charset.Charset;
 
 public class TCPConnection {
@@ -27,20 +28,31 @@ public class TCPConnection {
                 try {
                     TCPConnection.this.eventListener.onConnectionReady(TCPConnection.this);
                     while (!rxThread.isInterrupted()) {
-                        String user = in.readLine();
-                        int enemyOrUser = in.read();
+                        String user = "";
+                        int enemyOrUser = 100;
+                        try {
+                            user = in.readLine();
+                            enemyOrUser = in.read();
+                        } catch (SocketException ex) {
+//                            Server.SetShipNULL();
+                            //TCPConnection.this.eventListener.onDisconnect(TCPConnection.this);
+                            rxThread.interrupt();
+                        }
                         //System.out.println("Receive  data.");
                         hash = in.hashCode();
+                        if (user.equals("easy") || user.equals("hard") || user.equals("impossible")) {
+                            Bot.complexity = user.toString();
+                            continue;
+                        }
                         if (user.equals("yuorstep")) {
                             TCPConnection.this.eventListener.onReceive1(TCPConnection.this, enemyOrUser - 48);
-                        } else
+                        } else if ((enemyOrUser - 48) != 7)
                             TCPConnection.this.eventListener.onReceive(TCPConnection.this, user, enemyOrUser - 48);
                     }
-                } catch (NullPointerException e){
+                } catch (NullPointerException e) {
                     e.printStackTrace();
                     rxThread.interrupt();
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                     rxThread.interrupt();
                 } finally {
